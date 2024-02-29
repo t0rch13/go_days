@@ -5,30 +5,46 @@ import (
 	"architecture_go/services/contact/internal/delivery"
 	"architecture_go/services/contact/internal/repository"
 	"architecture_go/services/contact/internal/useCase"
-	"context"
 	"log"
 	"net/http"
 )
 
 func main() {
-	db, err := postgres.Connect("localhost", 5432, "postgres", "1112", "clean-arch-go")
+	log.Println("Starting the application...")
+	conn, err := postgres.Connect("localhost", 5432, "postgres", "1112", "clean-arch-go")
+	log.Println("Connected to the database...")
 
 	if err != nil {
-		log.Fatalf("Failed to connect to the database: %v", err)
+		log.Fatalf("Error connecting to the database: %v", err)
 	}
 
-	defer db.Close(context.Background())
-	log.Println("Connected to the database")
-
-	repo := repository.NewContactRepository()
-	useCase := useCase.NewContactUseCase(repo)
+	repository := repository.NewContactRepository(conn)
+	useCase := useCase.NewContactUseCase(repository)
 	delivery := delivery.NewContactDelivery(useCase)
 
-	_ = delivery
+	http.HandleFunc("/contacts/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			delivery.CreateContact(w, r)
+		case http.MethodGet:
+			delivery.GetContact(w, r)
+		case http.MethodPut:
+			delivery.UpdateContact(w, r)
+		case http.MethodDelete:
+			delivery.DeleteContact(w, r)
+		}
+	})
 
-	log.Println("Server is starting on port :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatalf("Failed to start the server: %v", err)
-	}
+	http.HandleFunc("/groups/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			delivery.CreateGroup(w, r)
+		} else if r.Method == http.MethodGet {
+			delivery.GetGroup(w, r)
+		}
+	})
 
+	http.HandleFunc("/addContactToGroup", delivery.AddContactToGroup)
+
+	log.Println("Application is up and running on http://localhost:8080/...")
+	http.ListenAndServe(":8080", nil)
 }

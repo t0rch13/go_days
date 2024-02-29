@@ -1,17 +1,16 @@
 package delivery
 
 import (
-	"architecture_go/services/contact/internal/useCase"
+	"net/http"
 )
 
-type ContactDeliveryImpl struct {
-	useCase useCase.ContactUseCase
-}
+type ContactDelivery interface {
+	CreateContact(w http.ResponseWriter, r *http.Request)
+	GetContact(w http.ResponseWriter, r *http.Request)
+	UpdateContact(w http.ResponseWriter, r *http.Request)
+	DeleteContact(w http.ResponseWriter, r *http.Request)
 
-func NewContactDelivery(useCase useCase.ContactUseCase) ContactDelivery {
-	return &ContactDeliveryImpl{
-		useCase: useCase,
-	}
+	CreateGroup(w http.ResponseWriter, r *http.Request)
+	GetGroup(w http.ResponseWriter, r *http.Request)
+	AddContactToGroup(w http.ResponseWriter, r *http.Request)
 }
-
-type ContactDelivery interface{}
